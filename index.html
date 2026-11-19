@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050408">
+<title>HSP Home Analyzer — Audio Lab</title>
+<style>
+:root{
+  --bg:#050408;
+  --panel:#0e0a18;
+  --panel2:#160f26;
+  --line:#2b1c4d;
+  --purple:#9d4edd;
+  --purple-bright:#c77dff;
+  --purple2:#5a189a;
+  --text:#f7f2ff;
+  --muted:#b4a6cf;
+  --green:#5bd6a0;
+  --amber:#f4c36a;
+  --red:#ff7888;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(ellipse at 50% -15%,#2b1055 0%,var(--bg) 58%);
+  color:var(--text);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+header{padding:22px 18px 14px;max-width:1100px;margin:auto}
+h1{font-size:clamp(24px,5vw,36px);letter-spacing:.07em;margin:0}
+h1 span{color:var(--purple-bright)}
+.sub{color:var(--muted);margin-top:4px;font-size:13px}
+main{max-width:1100px;margin:auto;padding:0 14px 40px}
+.grid{display:grid;grid-template-columns:1fr;gap:13px}
+.card{
+  background:linear-gradient(145deg,rgba(20,11,36,.98),rgba(8,6,14,.98));
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  min-width:0;
+  box-shadow:0 10px 30px #00000099;
+}
+h2{font-size:16px;margin:0 0 12px;color:#ffffff}
+h3{font-size:14px;margin:0 0 6px}
+.muted{color:var(--muted)}
+.small{font-size:12px;color:var(--muted)}
+input,select,button{font:inherit}
+input[type=file]{
+  width:100%;
+  padding:12px;
+  background:#07050c;
+  border:1px dashed #7b2cbf;
+  border-radius:12px;
+  color:var(--muted);
+}
+button{
+  border:0;
+  border-radius:10px;
+  padding:11px 14px;
+  background:linear-gradient(135deg,#7b2cbf,#5a189a);
+  color:#ffffff;
+  font-weight:650;
+  cursor:pointer;
+}
+button.secondary{
+  background:#140c24;
+  border:1px solid #4c2685;
+  color:#efe6ff;
+}
+button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.transport{
+  margin-top:12px;
+  padding:11px 12px;
+  background:#07050c;
+  border:1px solid #2b1c4d;
+  border-radius:12px;
+}
+.timeline-row{display:grid;grid-template-columns:46px 1fr 46px;gap:10px;align-items:center}
+.timecode{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:center}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.metric{
+  background:#07050c;
+  border:1px solid #2b1c4d;
+  border-radius:11px;
+  padding:10px;
+}
+.metric b{display:block;font-size:20px;font-variant-numeric:tabular-nums;color:#ffffff}
+.metric span{font-size:11px;color:var(--muted)}
+canvas{
+  width:100%;
+  display:block;
+  background:#050408;
+  border:1px solid #2b1c4d;
+  border-radius:10px;
+}
+.chart{height:220px}
+.wave{height:100px}
+.band{display:grid;grid-template-columns:92px 1fr 54px;gap:8px;align-items:center;margin:9px 0;font-size:12px}
+.track{height:8px;border-radius:10px;background:#1c1230;overflow:hidden}
+.fill{
+  height:100%;
+  background:linear-gradient(90deg,#5a189a,#c77dff);
+  border-radius:10px;
+}
+.notice{
+  padding:11px;
+  border-radius:10px;
+  background:#120922;
+  border:1px solid #48227e;
+  color:#e8dcff;
+  font-size:12px;
+  margin-top:10px;
+}
+.result{padding:11px 0;border-bottom:1px solid #2b1c4d}
+.result:last-child{border:0}
+.tag{
+  display:inline-block;
+  border-radius:20px;
+  padding:2px 8px;
+  font-size:10px;
+  background:#281147;
+  color:#e0c3fc;
+  margin-right:5px;
+}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+input[type=range]{width:100%;accent-color:var(--purple);margin:0}
+.controlrow{display:grid;grid-template-columns:1fr 55px;gap:10px;align-items:center}
+footer{max-width:1100px;margin:0 auto;padding:0 16px 28px;color:var(--muted);font-size:11px}
+@media(min-width:760px){.grid{grid-template-columns:1.1fr .9fr}.wide{grid-column:1/-1}.metrics{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>HSP <span>HOME ANALYZER</span></h1>
+  <div class="sub">LOCAL AUDIO ENGINEERING &amp; MONITORING LAB · BUILD 1.0 · ROYAL PURPLE EDITION</div>
+</header>
+<main>
+<div class="grid">
+<section class="card wide">
+<h2>01 / Load audio</h2>
+<input id="file" type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac">
+<div class="actions">
+  <button id="analyze" disabled>Analyze recording</button>
+  <button id="play" class="secondary" disabled>Play</button>
+  <button id="reset" class="secondary">Reset</button>
+</div>
+<div class="transport">
+  <div class="timeline-row">
+    <span id="curTime" class="timecode">0:00</span>
+    <input id="seek" type="range" min="0" max="1000" value="0" step="1" disabled aria-label="Playback position">
+    <span id="totTime" class="timecode">0:00</span>
+  </div>
+</div>
+<p id="fileinfo" class="small">Choose a vocal, instrumental, or full mix. Audio is analyzed in this browser; it is not uploaded to a server.</p>
+<div class="notice">Best first test: use a WAV file. Browser decoding support varies for FLAC, AIFF, and some MP3/M4A files. Long, high-resolution files may exceed iPhone browser memory.</div>
+</section>
+<section class="card">
+<h2>02 / Signal overview</h2>
+<div class="metrics">
+<div class="metric"><b id="peak">—</b><span>Sample peak (dBFS)</span></div>
+<div class="metric"><b id="rms">—</b><span>RMS (dBFS)</span></div>
+<div class="metric"><b id="duration">—</b><span>Duration</span></div>
+<div class="metric"><b id="crest">—</b><span>Crest factor (dB)</span></div>
+</div>
+<p class="small" id="channels">No audio loaded.</p>
+</section>
+<section class="card">
+<h2>03 / Waveform</h2><canvas id="wave" class="wave" width="1000" height="180"></canvas>
+<p class="small">Overview of the decoded audio amplitude.</p>
+</section>
+<section class="card wide">
+<h2>04 / Frequency spectrum</h2><canvas id="spectrum" class="chart" width="1200" height="440"></canvas>
+<p class="small">Multi-window FFT power average across the recording. Peaks indicate energy, not automatically a mix problem.</p>
+</section>
+<section class="card">
+<h2>05 / Frequency-band balance</h2>
+<div id="bands" class="muted small">Analyze a recording to calculate band energy.</div>
+</section>
+<section class="card">
+<h2>06 / Engineering findings</h2>
+<div id="findings" class="muted small">Findings will appear after analysis. Use stems for reliable source attribution and masking checks.</div>
+</section>
+<section class="card">
+<h2>07 / EQ &amp; dynamics suggestions</h2>
+<div id="recommendations" class="muted small">Recommendations will be generated from measured properties, with conservative starting points.</div>
+</section>
+<section class="card">
+<h2>08 / Preview processing</h2>
+<p class="small">Apply a gentle high-pass filter and optional broad EQ to a processed copy. This is a basic preview chain, not automatic mastering.</p>
+<label>High-pass cutoff</label><div class="controlrow"><input id="hp" type="range" min="20" max="180" value="35"><b id="hpv">35 Hz</b></div>
+<label>Low-mid adjustment (center 300 Hz)</label><div class="controlrow"><input id="lowmid" type="range" min="-6" max="3" step=".5" value="0"><b id="lmv">0 dB</b></div>
+<label>Presence adjustment (center 3 kHz)</label><div class="controlrow"><input id="presence" type="range" min="-3" max="3" step=".5" value="0"><b id="pv">0 dB</b></div>
+<div class="actions"><button id="export" disabled>Render &amp; download processed WAV</button></div>
+<p class="small">Export renders a new file and leaves the original unchanged. Processing uses offline browser filters.</p>
+</section>
+<section class="card">
+<h2>09 / Project notes</h2>
+<p class="small">This build measures audio and offers cautious diagnostic guidance. It does not yet provide true multitrack source separation, perceptual masking proof, AI listening, or reference-master matching.</p>
+<button id="report" class="secondary" disabled>Download analysis report</button>
+</section>
+</div>
+</main>
+<footer>HSP Home Analyzer · Local-first browser tool · Not a substitute for critical listening on multiple playback systems.</footer>
+<script>
+(() => {
+const $=id=>document.getElementById(id);
+let ctx=null, buffer=null, source=null, playing=false, analysis=null, reportText="";
+let playOffset=0, playStartedAt=0, rafId=null, seeking=false, ignoreNextEnd=false;
+
+const fmt=(x,n=1)=>Number.isFinite(x)?x.toFixed(n):"—";
+const db=x=>20*Math.log10(Math.max(x,1e-9));
+const fmtTime=s=>{
+  const safe=Math.max(0,Number.isFinite(s)?s:0);
+  return `${Math.floor(safe/60)}:${String(Math.floor(safe%60)).padStart(2,"0")}`;
+};
+
+function getCurrentPosition(){
+  if(!buffer)return 0;
+  if(!playing||!ctx)return Math.min(buffer.duration,Math.max(0,playOffset));
+  const elapsed=Math.max(0,ctx.currentTime-playStartedAt);
+  return Math.min(buffer.duration,playOffset+elapsed);
+}
+
+function updateTimelineUI(pos){
+  if(!buffer){
+    $("curTime").textContent="0:00";
+    $("totTime").textContent="0:00";
+    $("seek").value=0;
+    return;
+  }
+  const clamped=Math.min(buffer.duration,Math.max(0,pos));
+  $("curTime").textContent=fmtTime(clamped);
+  $("totTime").textContent=fmtTime(buffer.duration);
+  if(!seeking){
+    $("seek").value=buffer.duration>0?Math.round((clamped/buffer.duration)*1000):0;
+  }
+}
+
+function stopLoop(){
+  if(rafId!==null){cancelAnimationFrame(rafId);rafId=null;}
+}
+
+function tickTransport(){
+  if(!playing||!buffer)return;
+  const pos=getCurrentPosition();
+  updateTimelineUI(pos);
+  if(pos>=buffer.duration){
+    finishPlayback();
+    return;
+  }
+  rafId=requestAnimationFrame(tickTransport);
+}
+
+function finishPlayback(){
+  stopLoop();
+  playing=false;
+  playOffset=0;
+  $("play").textContent="Play";
+  updateTimelineUI(0);
+}
+
+function stopSourceOnly(suppressEndEvent=true){
+  stopLoop();
+  if(source){
+    if(suppressEndEvent)ignoreNextEnd=true;
+    source.onended=null;
+    try{source.stop();}catch(_){}
+    try{source.disconnect();}catch(_){}
+    source=null;
+  }
+}
+
+async function startPlayback(fromOffset=playOffset){
+  if(!buffer)return;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  ctx=ctx||new AC();
+  if(ctx.state==="suspended"){
+    try{await ctx.resume();}catch(_){}
+  }
+  stopSourceOnly(true);
+  const startAt=Math.min(Math.max(0,fromOffset),Math.max(0,buffer.duration-0.01));
+  playOffset=startAt;
+  playStartedAt=ctx.currentTime;
+
+  const src=ctx.createBufferSource();
+  src.buffer=buffer;
+  src.connect(ctx.destination);
+  src.onended=()=>{
+    if(ignoreNextEnd){ignoreNextEnd=false;return;}
+    finishPlayback();
+  };
+  source=src;
+  playing=true;
+  $("play").textContent="Pause";
+  src.start(0,startAt);
+  stopLoop();
+  rafId=requestAnimationFrame(tickTransport);
+}
+
+async function pausePlayback(){
+  if(!buffer||!playing)return;
+  playOffset=getCurrentPosition();
+  playing=false;
+  stopSourceOnly(true);
+  $("play").textContent="Play";
+  updateTimelineUI(playOffset);
+}
+
+function drawWave(b){
+ const c=$("wave"),g=c.getContext("2d"),w=c.width,h=c.height;g.clearRect(0,0,w,h);g.strokeStyle="#c77dff";g.lineWidth=1;
+ const d=b.getChannelData(0),step=Math.max(1,Math.floor(d.length/w));g.beginPath();
+ for(let x=0;x<w;x++){let mn=1,mx=-1;for(let j=0;j<step&&x*step+j<d.length;j++){let v=d[x*step+j];mn=Math.min(mn,v);mx=Math.max(mx,v)}g.moveTo(x,h/2-mx*h*.44);g.lineTo(x,h/2-mn*h*.44)}g.stroke();
+}
+
+function spectrum(b){
+ const sr=b.sampleRate, n=8192, half=n/2, numCh=b.numberOfChannels;
+ const totalLen=b.length;
+ const ch0=b.getChannelData(0);
+ const ch1=numCh>1?b.getChannelData(1):null;
+
+ const win=new Float64Array(n);
+ let windowSum=0;
+ for(let i=0;i<n;i++){
+   const wVal=.5-.5*Math.cos(2*Math.PI*i/(n-1));
+   win[i]=wVal;
+   windowSum+=wVal;
+ }
+
+ const maxWindows=16;
+ const numWindows=totalLen<=n?1:Math.min(maxWindows,Math.max(2,Math.ceil(totalLen/n)));
+ const starts=[];
+ if(numWindows===1){
+   starts.push(0);
+ }else{
+   const maxStart=Math.max(0,totalLen-n);
+   for(let wIdx=0;wIdx<numWindows;wIdx++){
+     starts.push(Math.floor((wIdx/(numWindows-1))*maxStart));
+   }
+ }
+
+ const avgPower=new Float64Array(half);
+ const re=new Float64Array(n), im=new Float64Array(n);
+
+ const bitRev=new Uint32Array(n);
+ for(let i=0;i<n;i++){
+   let x=i, y=0;
+   for(let bIdx=0;bIdx<13;bIdx++){y=(y<<1)|(x&1);x>>=1;}
+   bitRev[i]=y;
+ }
+
+ for(let sIdx=0;sIdx<starts.length;sIdx++){
+   const start=starts[sIdx];
+   for(let i=0;i<n;i++){
+     const idx=start+i;
+     let sample=0;
+     if(idx<totalLen){
+       sample=ch1?0.5*(ch0[idx]+ch1[idx]):ch0[idx];
+     }
+     re[bitRev[i]]=sample*win[i];
+     im[bitRev[i]]=0;
+   }
+
+   for(let len=2;len<=n;len<<=1){
+     const angle=-2*Math.PI/len, wr0=Math.cos(angle), wi0=Math.sin(angle);
+     for(let i=0;i<n;i+=len){
+       let wr=1,wi=0,halfLen=len>>1;
+       for(let k=0;k<halfLen;k++){
+         const u=i+k,v=i+k+halfLen;
+         const vr=re[v]*wr-im[v]*wi, vi=re[v]*wi+im[v]*wr;
+         re[v]=re[u]-vr;im[v]=im[u]-vi;re[u]+=vr;im[u]+=vi;
+         const nextWr=wr*wr0-wi*wi0;wi=wr*wi0+wi*wr0;wr=nextWr;
+       }
+     }
+   }
+
+   for(let k=0;k<half;k++){
+     const mag=Math.hypot(re[k],im[k]);
+     const amp=(k===0?mag:2*mag)/Math.max(1,windowSum);
+     avgPower[k]+=amp*amp;
+   }
+ }
+
+ const freqs=[], levels=[];
+ for(let k=0;k<half;k++){
+   const meanAmp=Math.sqrt(avgPower[k]/starts.length);
+   freqs.push(k*sr/n);
+   levels.push(20*Math.log10(Math.max(meanAmp,1e-8)));
+ }
+ return {freq:freqs,dbs:levels,windows:starts.length};
+}
+
+function drawSpectrum(sp){
+ const c=$("spectrum"),g=c.getContext("2d"),w=c.width,h=c.height;g.clearRect(0,0,w,h);
+ const left=58,right=18,top=18,bottom=38,pw=w-left-right,ph=h-top-bottom;
+ g.strokeStyle="#2b1c4d";g.fillStyle="#b4a6cf";g.font="16px sans-serif";
+ [0,1,2,3,4].forEach(i=>{let y=top+ph*i/4;g.beginPath();g.moveTo(left,y);g.lineTo(w-right,y);g.stroke();g.fillText(String(-20-i*20)+" dB",4,y+5)});
+ const min=20,max=20000;let pts=[];
+ for(let i=1;i<sp.freq.length;i++){let f=sp.freq[i];if(f<min||f>max)continue;let x=left+(Math.log10(f/min)/Math.log10(max/min))*pw;let val=Math.max(-100,Math.min(0,sp.dbs[i]));let y=top+((0-val)/100)*ph;pts.push([x,y])}
+ g.strokeStyle="#c77dff";g.lineWidth=3;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();
+ [20,50,100,250,500,1000,2000,5000,10000,20000].forEach(f=>{let x=left+(Math.log10(f/min)/Math.log10(max/min))*pw;g.fillStyle="#b4a6cf";g.fillText(f>=1000?(f/1000)+"k":String(f),x-12,h-10)});
+}
+function rmsPeak(b){
+ let sum=0,peak=0,count=0;for(let ch=0;ch<b.numberOfChannels;ch++){let d=b.getChannelData(ch);let stride=Math.max(1,Math.floor(d.length/2000000));for(let i=0;i<d.length;i+=stride){let v=d[i];sum+=v*v;peak=Math.max(peak,Math.abs(v));count++}}
+ return {rms:Math.sqrt(sum/Math.max(1,count)),peak};
+}
+function bandEnergy(sp,lo,hi){
+ let vals=[];for(let i=1;i<sp.freq.length;i++)if(sp.freq[i]>=lo&&sp.freq[i]<hi&&Number.isFinite(sp.dbs[i]))vals.push(Math.pow(10,sp.dbs[i]/10));
+ return vals.length?10*Math.log10(vals.reduce((a,b)=>a+b,0)/vals.length):-100;
+}
+function analyze(){
+ const m=rmsPeak(buffer),sp=spectrum(buffer),crest=db(m.peak)-db(m.rms);
+ const defs=[["Sub",20,60],["Bass",60,120],["Body",120,250],["Low mids",250,500],["Mids",500,2000],["Presence",2000,5000],["Sibilance",5000,8000],["Air",8000,16000]];
+ const bands=defs.map(([name,lo,hi])=>({name,lo,hi,level:bandEnergy(sp,lo,hi)}));
+ analysis={sampleRate:buffer.sampleRate,channels:buffer.numberOfChannels,duration:buffer.duration,...m,crest,bands,windows:sp.windows};
+ $("peak").textContent=fmt(db(m.peak),1);$("rms").textContent=fmt(db(m.rms),1);$("duration").textContent=fmtTime(buffer.duration);$("crest").textContent=fmt(crest,1);
+ $("channels").textContent=`${buffer.numberOfChannels} channel(s) · ${buffer.sampleRate.toLocaleString()} Hz · ${buffer.length.toLocaleString()} samples · ${sp.windows} FFT window(s)`;
+ drawWave(buffer);drawSpectrum(sp);
+ const maxBand=Math.max(...bands.map(x=>x.level));
+ $("bands").innerHTML=bands.map(x=>`<div class="band"><b>${x.name}</b><div class="track"><div class="fill" style="width:${Math.max(0,Math.min(100,(x.level+80)/80*100))}%"></div></div><span>${fmt(x.level,1)} dB</span></div>`).join("");
+ const findings=[];
+ if(db(m.peak)>-1)findings.push(["High peak level","Peak is close to digital full scale. Check for clipping and leave headroom before mastering."]);
+ if(crest<6)findings.push(["Low crest factor","The signal has limited peak-to-average contrast; check whether dynamics are overly controlled."]);
+ if(bands.find(x=>x.name==="Low mids").level>maxBand-12)findings.push(["Prominent low-mid energy","250–500 Hz is prominent relative to the measured bands. Listen for boxiness; do not cut without confirming by ear."]);
+ if(bands.find(x=>x.name==="Sibilance").level>maxBand-15)findings.push(["Presence of upper-frequency energy","5–8 kHz energy is present. Check vocal S/T sounds for sibilance; this measurement alone cannot identify harshness."]);
+ if(!findings.length)findings.push(["No obvious threshold flags","No simple threshold-based warning triggered. This does not establish that the mix is problem-free."]);
+ $("findings").innerHTML=findings.map(([t,d])=>`<div class="result"><b>${t}</b><div class="small">${d}</div></div>`).join("");
+ const low=bands.find(x=>x.name==="Low mids"),sub=bands.find(x=>x.name==="Sub"),pres=bands.find(x=>x.name==="Presence");
+ let rec=[];
+ if(low.level>maxBand-12)rec.push("Audition a broad, gentle 0.5–2 dB reduction around 250–400 Hz if the recording sounds boxy. Compare bypassed and processed audio.");
+ if(sub.level>maxBand-10)rec.push("Check for unwanted subsonic rumble. A high-pass filter around 25–35 Hz may help on some sources; avoid removing useful bass fundamentals.");
+ if(pres.level<maxBand-30)rec.push("If intelligibility is lacking, test a subtle presence lift around 2–4 kHz. Watch for harshness.");
+ rec.push("Compression cannot be reliably prescribed from a single average spectrum. Listen for level variation, then set threshold for the desired gain reduction.");
+ $("recommendations").innerHTML=rec.map(x=>`<div class="result">${x}</div>`).join("");
+ reportText=`HSP HOME ANALYZER — ANALYSIS REPORT
+File: ${$("file").files[0]?.name||"audio"}
+Duration: ${buffer.duration.toFixed(2)} s
+Sample rate: ${buffer.sampleRate} Hz
+Channels: ${buffer.numberOfChannels}
+Sample peak: ${db(m.peak).toFixed(2)} dBFS
+RMS: ${db(m.rms).toFixed(2)} dBFS
+Crest factor: ${crest.toFixed(2)} dB
+FFT windows averaged: ${sp.windows}
+
+BAND LEVELS (multi-window FFT estimate)
+${bands.map(x=>`${x.name} ${x.lo}-${x.hi} Hz: ${x.level.toFixed(2)} dB`).join("
+")}
+
+LIMITATIONS
+This is a basic browser analyzer. Spectrum values are representative estimates, not calibrated acoustic measurements. No source separation, verified perceptual masking detection, or reference-master comparison is performed. Use critical listening.`;
+ $("export").disabled=false;$("report").disabled=false;
+}
+
+$("file").addEventListener("change",async e=>{
+ const f=e.target.files[0];if(!f)return;
+ stopSourceOnly(true);
+ playing=false;playOffset=0;$("play").textContent="Play";
+ $("fileinfo").textContent=`Loading ${f.name}…`;
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;ctx=ctx||new AC();
+  const arr=await f.arrayBuffer();buffer=await ctx.decodeAudioData(arr.slice(0));
+  $("fileinfo").textContent=`Loaded: ${f.name} · ${(f.size/1048576).toFixed(2)} MB`;
+  $("analyze").disabled=false;$("play").disabled=false;$("seek").disabled=false;$("export").disabled=true;$("report").disabled=true;
+  updateTimelineUI(0);
+ }catch(err){$("fileinfo").textContent="Could not decode this file in your browser. Try exporting it as WAV or MP3, then upload again."}
+});
+
+$("analyze").onclick=()=>{if(buffer)try{analyze()}catch(e){$("findings").textContent="Analysis error: "+e.message}};
+
+$("play").onclick=async()=>{
+ if(!buffer)return;
+ if(playing){await pausePlayback();}
+ else{await startPlayback(playOffset);}
+};
+
+$("seek").addEventListener("pointerdown",()=>{seeking=true;});
+$("seek").addEventListener("touchstart",()=>{seeking=true;},{passive:true});
+$("seek").addEventListener("input",()=>{
+ if(!buffer)return;
+ const targetPos=(Number($("seek").value)/1000)*buffer.duration;
+ $("curTime").textContent=fmtTime(targetPos);
+});
+const commitSeek=async()=>{
+ if(!buffer)return;
+ const targetPos=(Number($("seek").value)/1000)*buffer.duration;
+ seeking=false;
+ playOffset=targetPos;
+ updateTimelineUI(targetPos);
+ if(playing){
+   await startPlayback(targetPos);
+ }
+};
+$("seek").addEventListener("change",commitSeek);
+$("seek").addEventListener("pointerup",commitSeek);
+$("seek").addEventListener("touchend",commitSeek,{passive:true});
+
+$("reset").onclick=()=>{
+ stopSourceOnly(true);
+ playing=false;playOffset=0;buffer=null;analysis=null;
+ $("file").value="";$("fileinfo").textContent="Choose a vocal, instrumental, or full mix.";
+ $("analyze").disabled=true;$("play").disabled=true;$("play").textContent="Play";
+ $("seek").disabled=true;$("export").disabled=true;$("report").disabled=true;
+ updateTimelineUI(0);
+ ["peak","rms","duration","crest"].forEach(x=>$(x).textContent="—");
+ $("bands").textContent="Analyze a recording to calculate band energy.";
+ $("findings").textContent="Findings will appear after analysis.";
+ $("recommendations").textContent="Recommendations will appear after analysis.";
+};
+
+["hp","lowmid","presence"].forEach(id=>$(id).oninput=()=>{$(id==="hp"?"hpv":id==="lowmid"?"lmv":"pv").textContent=$(id).value+(id==="hp"?" Hz":" dB")});
+
+function wavBlob(b){
+ const ch=b.numberOfChannels,len=b.length,rate=b.sampleRate,bytes=2,buf=new ArrayBuffer(44+len*ch*bytes),v=new DataView(buf);
+ const write=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+ write(0,"RIFF");v.setUint32(4,36+len*ch*bytes,true);write(8,"WAVE");write(12,"fmt ");v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,rate,true);v.setUint32(28,rate*ch*bytes,true);v.setUint16(32,ch*bytes,true);v.setUint16(34,16,true);write(36,"data");v.setUint32(40,len*ch*bytes,true);
+ let off=44;for(let i=0;i<len;i++)for(let c=0;c<ch;c++){let s=Math.max(-1,Math.min(1,b.getChannelData(c)[i]));v.setInt16(off,s<0?s*32768:s*32767,true);off+=2}
+ return new Blob([buf],{type:"audio/wav"});
+}
+
+$("export").onclick=async()=>{
+ if(!buffer)return;const sr=buffer.sampleRate,off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,sr);
+ const src=off.createBufferSource();src.buffer=buffer;
+ const hp=off.createBiquadFilter();hp.type="highpass";hp.frequency.value=Number($("hp").value);hp.Q.value=.707;
+ const lm=off.createBiquadFilter();lm.type="peaking";lm.frequency.value=300;lm.Q.value=1;lm.gain.value=Number($("lowmid").value);
+ const pr=off.createBiquadFilter();pr.type="peaking";pr.frequency.value=3000;pr.Q.value=1;pr.gain.value=Number($("presence").value);
+ src.connect(hp);hp.connect(lm);lm.connect(pr);pr.connect(off.destination);src.start();
+ const rendered=await off.startRendering(),blob=wavBlob(rendered),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="hsp-home-analyzer-processed.wav";a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+};
+$("report").onclick=()=>{const b=new Blob([reportText],{type:"text/plain"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="hsp-home-analyzer-report.txt";a.click();setTimeout(()=>URL.revokeObjectURL(u),10000)};
+})();
+</script>
+</body></html>
