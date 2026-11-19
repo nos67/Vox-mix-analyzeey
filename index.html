@@ -134,7 +134,7 @@ footer{max-width:1100px;margin:0 auto;padding:0 16px 28px;color:var(--muted);fon
 <body>
 <header>
   <h1>HSP <span>HOME ANALYZER</span></h1>
-  <div class="sub">LOCAL AUDIO ENGINEERING &amp; MONITORING LAB · BUILD 1.0 · ROYAL PURPLE EDITION</div>
+  <div class="sub">LOCAL AUDIO ENGINEERING &amp; MONITORING LAB · BUILD 1.0.1 · ROYAL PURPLE EDITION</div>
 </header>
 <main>
 <div class="grid">
@@ -433,22 +433,23 @@ function analyze(){
  if(pres.level<maxBand-30)rec.push("If intelligibility is lacking, test a subtle presence lift around 2–4 kHz. Watch for harshness.");
  rec.push("Compression cannot be reliably prescribed from a single average spectrum. Listen for level variation, then set threshold for the desired gain reduction.");
  $("recommendations").innerHTML=rec.map(x=>`<div class="result">${x}</div>`).join("");
- reportText=`HSP HOME ANALYZER — ANALYSIS REPORT
-File: ${$("file").files[0]?.name||"audio"}
-Duration: ${buffer.duration.toFixed(2)} s
-Sample rate: ${buffer.sampleRate} Hz
-Channels: ${buffer.numberOfChannels}
-Sample peak: ${db(m.peak).toFixed(2)} dBFS
-RMS: ${db(m.rms).toFixed(2)} dBFS
-Crest factor: ${crest.toFixed(2)} dB
-FFT windows averaged: ${sp.windows}
-
-BAND LEVELS (multi-window FFT estimate)
-${bands.map(x=>`${x.name} ${x.lo}-${x.hi} Hz: ${x.level.toFixed(2)} dB`).join("
-")}
-
-LIMITATIONS
-This is a basic browser analyzer. Spectrum values are representative estimates, not calibrated acoustic measurements. No source separation, verified perceptual masking detection, or reference-master comparison is performed. Use critical listening.`;
+ reportText=[
+  "HSP HOME ANALYZER — ANALYSIS REPORT",
+  `File: ${$("file").files[0]?.name||"audio"}`,
+  `Duration: ${buffer.duration.toFixed(2)} s`,
+  `Sample rate: ${buffer.sampleRate} Hz`,
+  `Channels: ${buffer.numberOfChannels}`,
+  `Sample peak: ${db(m.peak).toFixed(2)} dBFS`,
+  `RMS: ${db(m.rms).toFixed(2)} dBFS`,
+  `Crest factor: ${crest.toFixed(2)} dB`,
+  `FFT windows averaged: ${sp.windows}`,
+  "",
+  "BAND LEVELS (multi-window FFT estimate)",
+  ...bands.map(x=>`${x.name} ${x.lo}-${x.hi} Hz: ${x.level.toFixed(2)} dB`),
+  "",
+  "LIMITATIONS",
+  "This is a basic browser analyzer. Spectrum values are representative estimates, not calibrated acoustic measurements. No source separation, verified perceptual masking detection, or reference-master comparison is performed. Use critical listening."
+ ].join("\n");
  $("export").disabled=false;$("report").disabled=false;
 }
 
